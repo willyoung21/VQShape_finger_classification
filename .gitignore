@@ -1,4 +1,6 @@
 app/temp_input.ts
 app/temp.ts
 app/vqshape_features_config.pkl
-VQShape\checkpoints\uea_dim256_codebook512\VQShape.ckpt
+app/vqshape_svm_finger.pkl
+VQShape/checkpoints/uea_dim256_codebook512/VQShape.ckpt
+
