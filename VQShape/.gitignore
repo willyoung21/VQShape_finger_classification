@@ -1,2 +1,2 @@
 *.pyc
-VQShape\checkpoints\uea_dim256_codebook512\VQShape.ckpt
+checkpoints\uea_dim256_codebook512\VQShape.ckpt
