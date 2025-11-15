@@ -1,0 +1,16 @@
+version: "3.9"
+
+services:
+  vqshape_app:
+    build: .
+    container_name: vqshape_app
+    ports:
+      - "8501:8501"
+    volumes:
+      # Monta el código de la app localmente dentro del contenedor
+      - ./app:/app
+      # Monta también la carpeta del modelo VQShape para que se actualicen los cambios
+      - ./VQShape:/app/VQShape
+    environment:
+      - PYTHONPATH=/app/VQShape
+    command: streamlit run app.py --server.port=8501 --server.address=0.0.0.0 --server.runOnSave=true
