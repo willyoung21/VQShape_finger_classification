@@ -6,6 +6,12 @@
 
 ---
 
+## Nombre de Articulo Base + Repositorio en Github Original
+
+El siguiente trabajo está basado principalmente en el uso de la Arquitectura VQShape la cual es la responsable de realizar todo el proceso de reconstrucción de Series Temporales Multivariadas, entrenada en distintos datasets usando una generalización de formas de las subsecuencias, para así fomentar el uso de la arquitectura en cualquier ámbito que se desee trabajar, Desde ElectroCardioGramas, Hasta Emociones del Ser Humano.
+
+### ([Abstracted Shapes as Tokens - A Generalizable and Interpretable Model for Time-series Classification](https://arxiv.org/pdf/2411.01006))
+
 ## 📋 Guía de Instalación y Ejecución
 
 ### 1. Clonar el repositorio
