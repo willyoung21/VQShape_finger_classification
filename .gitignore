@@ -3,4 +3,3 @@ app/temp.ts
 app/vqshape_features_config.pkl
 app/vqshape_svm_finger.pkl
 VQShape/checkpoints/uea_dim256_codebook512/VQShape.ckpt
-Arquitectura.jpg
