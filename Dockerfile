@@ -11,15 +11,15 @@ RUN apt-get update && \
 # Directorio principal
 WORKDIR /app
 
-# Instala dependencias
+# Instalamos las dependencias
 COPY app/requirements.txt /app/
 RUN pip install --upgrade pip && pip install --no-cache-dir -r /app/requirements.txt
 
-# Copia el contenido completo del proyecto
+# Copiamos el contenido completo del proyecto
 COPY VQShape/ /app/VQShape/
 COPY app/app.py /app/
 
-# 🔹 Añade esta línea: permite que Python vea /app/VQShape como módulo raíz
+# Esta liena permite que Python vea /app/VQShape como módulo raíz
 ENV PYTHONPATH="/app/VQShape:${PYTHONPATH}"
 
 # Puerto de streamlit
