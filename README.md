@@ -33,7 +33,7 @@ El Modelo VQShape es un modelo de Deep Learning para clasificación de Series Te
 ## Resumen Teórico de la Arquitectura
 
 <p align="center">
-  <img src="Arquitectura.jpg" alt="Arquitectura" width="70%">
+  <img src="Arquitectura.jpg" alt="Arquitectura" width="90%">
 </p>
 
 
@@ -45,7 +45,9 @@ Además, el modelo incluye una operación de interpolación que ajusta la forma 
 
 Por ultimo, una vez se tiene la serie reconstruida, y se compara con la original para ver que tan bien se reconstrusye, esta serie para por una capa MLP para el proceso de Clasificación el cual nos permite ver que tan bien está reconstruyendo el modelo, respecto a la reconstrucción de la serie que hace en todo el proceso de la arquitectura.
 
-##### A continuación, se va a explicar como hacer el proceso de instalación de este Repositorio, para poder trabajar un modelo de clasificación, usando la arquitectura vista de VQShape.
+--- 
+
+### A continuación, se va a explicar como hacer el proceso de instalación de este Repositorio, para poder trabajar un modelo de clasificación, usando la arquitectura vista de VQShape.
 
 ## 📋 Guía de Instalación y Ejecución
 
