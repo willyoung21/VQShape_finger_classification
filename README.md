@@ -32,9 +32,10 @@ El Modelo VQShape es un modelo de Deep Learning para clasificación de Series Te
 
 ## Resumen Teórico de la Arquitectura
 
-<div style="text-align: center;">
-  <img src="Arquitectura.jpg" alt="Arquitectura" width="500">
-</div>
+<p align="center">
+  <img src="Arquitectura.jpg" alt="Arquitectura" width="70%">
+</p>
+
 
 La arquitectura VQShape está diseñada para representar series temporales mediante formas discretas que se aprenden directamente del espacio latente. El proceso comienza con una serie temporal univariada, a la cual primero se le aplica Instance Normalization y luego se divide en pequeños segmentos llamados patches. Cada patch es transformado a un espacio de mayor dimensión usando una capa lineal con positional embedding, de manera que el modelo pueda capturar la información temporal y la posición relativa dentro de la serie. Estos embeddings se introducen en un Time-series Encoder basado en Transformer, que se encarga de extraer las características globales de la señal.
 
