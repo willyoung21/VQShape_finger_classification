@@ -109,74 +109,274 @@ def get_histogram(x):
 
 
 # 5) Interfaz Streamlit
+st.set_page_config(
+    page_title="Clasificación EEG — VQShape + Linear",
+    page_icon="🧠",
+    layout="wide"
+)
 
-st.title("Clasificación EEG (Left / Right) — VQShape + Linear")
-st.write("Sube un archivo `.ts`")
+# ---------- Estilos globales ligeros ----------
+st.markdown(
+    """
+    <style>
+    /* Fondo más limpio para los bloques principales */
+    .main > div {
+        padding-top: 1rem;
+    }
+    /* Botones más grandes y elegantes */
+    div.stButton > button:first-child {
+        background-color: #4A90E2;
+        color: white;
+        border-radius: 8px;
+        padding: 0.6rem 1.2rem;
+        border: none;
+    }
+    div.stButton > button:first-child:hover {
+        background-color: #357ABD;
+        color: white;
+    }
+    /* Métricas más compactas */
+    [data-testid="stMetricValue"] {
+        font-size: 1.5rem;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
-uploaded = st.file_uploader("Archivo .ts", type=["ts"])
+# ---------- CABECERA ----------
+col_title, col_info = st.columns([2, 1])
 
-if uploaded is not None:
+with col_title:
+    st.title("🧠 Clasificación EEG (Left / Right) — VQShape + Linear")
+    st.markdown(
+        """
+        Esta aplicación toma señales EEG del dataset **FingerMovements** y las 
+        tokeniza con **VQShape** para luego clasificarlas como movimiento de 
+        **mano izquierda** o **mano derecha** usando un clasificador lineal.
+        """
+    )
+
+with col_info:
+    st.markdown("### 📌 Resumen rápido")
+    st.markdown(
+        """
+        - Modelo base: **VQShape** (preentrenado UEA)  
+        - Clasificador: **Linear layer**  
+        - Datos: **EEG multicanal (28 canales)**  
+        - Formato entrada: archivo **`.ts`**  
+        """
+    )
+
+st.markdown("---")
+
+# ---------- SIDEBAR: CARGA Y OPCIONES ----------
+st.sidebar.header("⚙️ Configuración")
+
+st.sidebar.markdown("### 1. Cargar archivo `.ts`")
+uploaded = st.sidebar.file_uploader(
+    "Selecciona o arrastra un archivo FingerMovements_*.ts",
+    type=["ts"]
+)
+
+view_hist = st.sidebar.checkbox("Mostrar histograma de tokens", value=True)
+view_probs = st.sidebar.checkbox("Mostrar detalle de probabilidades", value=True)
+
+# ---------- CUERPO PRINCIPAL ----------
+if uploaded is None:
+    st.info(
+        "Sube un archivo `.ts` desde la barra lateral para comenzar. "
+        "Idealmente, utiliza **FingerMovements_TEST.ts**."
+    )
+else:
     try:
-        st.write("Cargando archivo .ts completo...")
+        with st.spinner("Cargando archivo .ts completo..."):
+            # Guardamos temporalmente el archivo subido
+            temp_path = "temp_input.ts"
+            with open(temp_path, "wb") as f:
+                f.write(uploaded.getbuffer())
 
-        # # Guardamos temporalmente el archivo subido
-        temp_path = "temp_input.ts"
-        with open(temp_path, "wb") as f:
-            f.write(uploaded.getbuffer())
+            # Cargar todas las muestras
+            X, y = load_from_tsfile(temp_path, return_data_type="numpy3D")
 
-        # Cargar todas las muestras
-        X, y = load_from_tsfile(temp_path, return_data_type="numpy3D")
+        st.success(f"✔ Archivo cargado correctamente. Total de muestras: **{X.shape[0]}**")
 
-        st.success(f"Archivo cargado correctamente. Total de muestras: {X.shape[0]}")
+        # ---------- Selección de muestra ----------
+        st.markdown("### 🎚 Selección de muestra")
 
-        # Slider para elegir una muestra
-        idx = st.slider("Selecciona la muestra a clasificar", 0, X.shape[0] - 1, 0)
+        col_idx, col_hint = st.columns([2, 1])
+        with col_idx:
+            idx = st.slider(
+                "Selecciona la muestra (trial) a visualizar y clasificar:",
+                0, X.shape[0] - 1, 0
+            )
+        with col_hint:
+            st.caption(
+                "Cada trial corresponde a un intento de movimiento capturado en EEG "
+                "(etiqueta `left` o `right`)."
+            )
 
         sample = X[idx]     # (28, 50)
         real_label = y[idx] # string ("left"/"right")
 
+        # ---------- TABS PRINCIPALES ----------
+        tab_signal, tab_tokens, tab_results = st.tabs(
+            ["📡 Señal EEG", "🧩 Tokens VQShape", "🎯 Clasificación"]
+        )
 
-        # 6) Visualización de la señal EEG
+        # ===== TAB 1: SEÑAL EEG =====
+        with tab_signal:
+            st.markdown(f"#### Señal EEG — Trial {idx}")
+            fig, ax = plt.subplots(figsize=(12, 4))
+            ax.plot(sample.T, linewidth=0.7, alpha=0.9)
+            ax.set_title(f"Trial {idx} — Etiqueta real: {real_label.upper()}", fontsize=13)
+            ax.set_yticks([])
+            ax.set_xticks([])
+            st.pyplot(fig)
 
-        st.subheader(f"Señal EEG — Trial {idx}")
+            st.caption(
+                "Cada línea corresponde a un canal EEG. La señal se representa cruda, "
+                "antes de la tokenización por VQShape."
+            )
 
-        fig, ax = plt.subplots(figsize=(12, 4))
-        ax.plot(sample.T, linewidth=0.7)
-        ax.set_title(f"Trial {idx} — Etiqueta real: {real_label.upper()}")
-        ax.set_yticks([]); ax.set_xticks([])
-        st.pyplot(fig)
+        # ===== Procesamiento compartido (tokens + clasificación) =====
+        x_proc = preprocess_signal(sample)   # NO se cambia esta función
+        hist = get_histogram(x_proc)         # NO se cambia esta función
 
-        # 7) Extracción del histograma con VQShape
-        
-        x_proc = preprocess_signal(sample)
-        hist = get_histogram(x_proc)
+        # ===== TAB 2: TOKENS =====
+        with tab_tokens:
+            st.markdown("#### Histograma de Tokens (Codebook 512D)")
+
+            if view_hist:
+                hist_np = hist.numpy() if hasattr(hist, "numpy") else hist
+                fig2, ax2 = plt.subplots(figsize=(10, 3))
+                ax2.bar(range(len(hist_np)), hist_np, color="skyblue")
+                ax2.set_title("Distribución de tokens usados para este trial")
+                ax2.set_xlabel("Índice de Token")
+                ax2.set_ylabel("Frecuencia")
+                st.pyplot(fig2)
+
+                st.caption(
+                    "Cada barra indica cuántas veces un token del codebook de VQShape "
+                    "fue asignado a las subsecuencias del EEG."
+                )
+            else:
+                st.info("La visualización del histograma está desactivada desde la barra lateral.")
+
+        # ===== TAB 3: CLASIFICACIÓN =====
+        with tab_results:
+            st.markdown("#### Resultado de Clasificación")
+
+            # --- FUNCIONES VISUALES ---
+            def get_hand_icon(label):
+                label = label.lower()
+                return "👈" if label == "left" else "👉"
+
+            def get_color(pred, real):
+                return "green" if pred == real else "red"
+
+            def get_status_text(pred, real):
+                return "✔ ACIERTO" if pred == real else "✘ ERROR"
+
+            def box_style(color):
+                return f"""
+                    padding: 15px;
+                    border-radius: 12px;
+                    border: 2px solid {color};
+                    background-color: rgba(0, 0, 0, 0.05);
+                    text-align: center;
+                    margin-bottom: 15px;
+                """
+
+            # ------------------------------------------------------------
+            # Clasificación usando el clasificador lineal
+            # ------------------------------------------------------------
+            with torch.no_grad():
+                logits = clf(hist.unsqueeze(0))
+                probs = torch.softmax(logits, dim=1).numpy()[0]
+                pred_idx = int(np.argmax(probs))
+
+            pred_label = "right" if pred_idx == 1 else "left"
+
+            hand_real  = get_hand_icon(real_label)
+            hand_pred  = get_hand_icon(pred_label)
+            color_eval = get_color(pred_label, real_label)
+            status     = get_status_text(pred_label, real_label)
+
+            col1, col2, col3 = st.columns([1, 1, 1])
+
+            # -------- ETIQUETA REAL --------
+            with col1:
+                st.markdown(
+                    f"""
+                    <div style="{box_style('black')}">
+                        <h5>Etiqueta real</h5>
+                        <div style="font-size:38px;">{hand_real}</div>
+                        <div style="font-size:20px; font-weight:bold;">{real_label.upper()}</div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+
+            # -------- PREDICCIÓN --------
+            with col2:
+                st.markdown(
+                    f"""
+                    <div style="{box_style(color_eval)}">
+                        <h5>Predicción modelo</h5>
+                        <div style="font-size:38px; color:{color_eval};">{hand_pred}</div>
+                        <div style="font-size:20px; font-weight:bold; color:{color_eval};">
+                            {pred_label.upper()}
+                        </div>
+                        <div style="color:{color_eval}; margin-top:4px; font-weight:bold;">
+                            {status}
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+
+            # -------- CONFIANZA --------
+            with col3:
+                diff = probs[pred_idx] - probs[1 - pred_idx]
+                st.metric(
+                    "Confianza",
+                    f"{probs[pred_idx]*100:.2f}%",
+                    delta=f"{diff*100:.2f}%"
+                )
+
+            # --------PROBABILIDADES -------
+            if view_probs:
+                st.markdown("##### Probabilidades por clase")
+
+                st.write("**👈 LEFT**")
+                st.progress(float(probs[0]))
+
+                st.write("**👉 RIGHT**")
+                st.progress(float(probs[1]))
+
+                st.write(
+                    f"""
+                    **Left:**  {probs[0]:.4f}  
+                    **Right:** {probs[1]:.4f}
+                    """
+                )
+            else:
+                st.caption("Las probabilidades detalladas están ocultas (ver barra lateral).")
 
 
-        # 8) Clasificamos con el modelo entrenado
-        
-        with torch.no_grad():
-            logits = clf(hist.unsqueeze(0))
-            probs = torch.softmax(logits, dim=1).numpy()[0]
-            pred_idx = int(np.argmax(probs))
+            st.markdown("---")
+            if pred_label == real_label:
+                st.success(
+                    "✅ La predicción coincide con la etiqueta real. "
+                    "Para este trial, el patrón de tokens fue suficientemente distintivo."
+                )
+            else:
+                st.warning(
+                    "⚠️ La predicción NO coincide con la etiqueta real. "
+                    "Esto refleja la dificultad de clasificar EEG solo a partir de formas discretas."
+                )
 
-        pred_label = "right" if pred_idx == 1 else "left"
-        
-
-        # 9) Mostramos la comparación entre la etiqueta real y la prediccion de el modelo
-        
-        st.subheader("🔍 Resultado de Clasificación")
-
-        col1, col2 = st.columns(2)
-
-        with col1:
-            st.metric("Etiqueta real", real_label.upper())
-
-        with col2:
-            st.metric("Predicción modelo", pred_label.upper())
-
-        st.write("### Probabilidades:")
-        st.write(f"Left  : {probs[0]:.4f}")
-        st.write(f"Right : {probs[1]:.4f}")
 
     except Exception as e:
-        st.error(f"Error procesando archivo: {e}")
+        st.error(f"❌ Error procesando archivo: {e}")
